@@ -1,19 +1,8 @@
       …or create a new repository on the command line
 $ echo "内容" >> README.md
 $git init                                        # Git初始化的命令，用于新建版本库
-$git add README.md
-
-          ？git 报错 pathspec 'XXX' did not match any file(s) known to git
-
-
-$git commit -m "first commit"   # 第一个命令是告诉Git要追踪什么文件，第二个命令是进行提交，并对此次提交做个简答说自提交生成一个16进制的版本号。
-
-
-         ？git 报错 Please tell me who you are
- ！git config --global user.email "you@example.com
- ！git config --global user.name "Your Name"
- 
-
+$git add README.md    
+$git commit -m "first commit"   # 第一个命令是告诉Git要追踪什么文件，第二个命令是进行提交，并对此次提交做个简答说自提交生成一个16进制的版本号。   
 $git remote add origin https://github.com/raychanid/项目.git  #输入远程地址
 $git push -u origin master      #上传到github
 
@@ -21,34 +10,3 @@ $git push -u origin master      #上传到github
       …or push an existing repository from the command line
 $git remote add origin https://github.com/raychanid/111.git
 $git push -u origin master
-
-
-
-
-
-
-
-$ git push origin master
-
-？git 报错 error：failed to push some refs to 
-
-！git pull --rebase origin master
-
-这条指令的意思是把远程库中的更新合并到本地库中，–rebase的作用是取消掉本地库中刚刚的commit，并把他们接到更新后的版本库之
-
-？git 报错error: src refspec master does not match any.
- ！ git add  DOCUMENTALL
- ！git commit -m "WORD"
-
-？git 报错 fatal: remote origin already exists   #该错误消息表示，已经有一个远程具有相同名称的构成。所以，可以用不用的名称添加新的远程或更新现有的一个
-!git remote set-url origin https://github.com/luodao236/onceAgain.git
-!git push origin master
-
-?git 报错 fatal: Updating an unborn branch with changes added to the index
-!git commit -m "xx" 
-
-?git提交报错nothing added to commit but untracked files present
-Username for 'https://github.com': yourUsername
-Password for 'https://itmyhome2013@github.com': yourPassword
-注意:密码不会显示在控制台。
-提交成功后就可以进入github查看自己的项目了
