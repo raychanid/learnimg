@@ -1,0 +1,293 @@
+know_host : 存储 已经确保正常、可以安全连接的所有服务器(hosts)的公钥。
+
+authorized_hosts ： 存储 已经认证的客户端的公钥。
+
+public key ：公钥
+
+private key ：私钥
+
+使用ssh和https有什么不同：
+
+HTTPS：使用https url克隆对初学者来说会比较方便，复制https url然后到git Bash里面直接用clone命令克隆到本地就好了，但是每次fetch和push代码都需要输入账号和密码，这也是https方式的麻烦之处(发现了https免密登录的方式)。
+SSH：使用SSH url克隆却需要在克隆之前先配置和添加好SSH key，因此，如果你想要使用SSH url克隆的话，你必须是这个项目的拥有者或管理员，否则你是无法添加SSH key的。另外ssh默认是每次fetch和push代码都不需要输入账号和密码，如果你想要每次都输入账号密码才能进行fetch和push也可以另外进行设置
+
+生成SSH Key的基本命令：
+
+复制代码
+#步骤1：
+cd  ~/.ssh ls
+#这两个命令就是检查是否已经存在id_rsa.pub或id_dsa.pub文件，如果文件已经存在，那么你可以跳过步骤2
+
+#步骤2：创建一个SSH Key 
+ssh-keygen -t rsa -C "你的email地址"
+#代码参数含义： 
+#-t指定密钥类型，默认是rsa，可以省略。 
+#-C设置注释文字，比如邮箱。 
+#-f指定密钥文件存储文件名。 
+复制代码
+ 
+
+一、什么是SSH？
+ SSH是一种网络协议，用于计算机之间的加密登录。如果一个用户从本地计算机，使用SSH协议登录另一台远程计算机，我们就可以认为，这种登录是安全的，即使被中途截获，密码也不会泄露。
+
+最早的时候，互联网通信都是明文通信，一旦被截获，内容就暴露无疑。1995年，芬兰学者Tatu Ylonen设计了SSH协议，将登录信息全部加密，成为互联网安全的一个基本解决方案，迅速在全世界获得推广，目前已经成为Linux系统的标准配置。
+
+SSH仅仅是一协议标准，其具体的实现有很多，既有开源实现的OpenSSH，也有商业实现方案。使用范围最广泛的当然是开源实现OpenSSH。
+
+本文只讨论SSH在Linux Shell中的用法。如果要在Windows系统中使用SSH，请使用PuTTY。
+
+二、最基本的用法
+SSH主要用于远程登录。假定你要以用户名user，登录远程主机host，只要一条简单命令就可以了。
+
+$ ssh user@host
+如果本地用户名与远程用户名一致，登录时可以省略用户名。
+
+$ ssh host
+SSH的默认端口是22，也就是说，你的登录请求会送进远程主机的22端口。使用p参数，可以修改这个端口，比如改成8888。
+
+$ ssh -p 8888 user@host
+上面这条命令表示，ssh直接连接远程主机的8888端口。
+
+既然说ssh是互联网安全的一个基本解决方案，那如果保证数据安全？
+
+三、如何实现数据安全？对称加密和非对称加密介绍
+首先想到的实现方案肯定是对数据进行加密。加密的方式主要有两种：
+
+对称加密（也称为秘钥加密）
+非对称加密（也称公钥加密）
+所谓对称加密，指加密解密使用同一套秘钥。如下图所示：
+
+对称加密-Client端
+
+对称加密-Client端
+
+ 对称加密-Server端
+
+
+
+对称加密的加密强度高，很难破解。
+
+但是在实际应用过程中不得不面临一个棘手的问题：如何安全的保存密钥呢？尤其是考虑到数量庞大的Client端，很难保证密钥不被泄露。一旦一个Client端的密钥被窃据，那么整个系统的安全性也就不复存在。为了解决这个问题，非对称加密应运而生。非对称加密有两个密钥："公钥"和"私钥"。
+
+特性：
+
+公钥加密后的密文，只能通过其对应的私钥进行解密。
+
+通过公钥推理出私钥的可能性微乎其微。
+
+以用户TopGun为例，如下（图三）：
+
+
+
+登录流程：
+
+远程Server收到Client端用户TopGun的登录请求，Server把自己的公钥发给用户。
+
+Client使用这个公钥，将密码进行加密。
+
+Client将加密的密码发送给Server端。
+
+远程Server用自己的私钥，解密登录密码，然后验证其合法性。
+
+若验证结果，给Client相应的响应。
+
+私钥是Server端独有的，这就保证了Client的登录信息即使在网络传输过程中被窃据，也没有私钥进行解密，保证了数据的安全性，这充分利用了非对称加密的特性。
+
+这就一定安全了吗？
+
+四、中间人攻击
+SSH之所以能够保证安全，原因在于它采用了公钥加密。
+
+整个过程如上图所示：
+
+（1）远程主机收到用户的登录请求，把自己的公钥发给用户。
+
+（2）用户使用这个公钥，将登录密码加密后，发送回来。
+
+（3）远程主机用自己的私钥，解密登录密码，如果密码正确，就同意用户登录。
+
+这个过程本身是安全的，但是实施的时候存在一个风险：
+
+Client端如何保证接受到的公钥就是目标Server端的？，如果一个攻击者中途拦截Client的登录请求，向其发送自己的公钥，Client端用攻击者的公钥进行数据加密。攻击者接收到加密信息后再用自己的私钥进行解密，不就窃取了Client的登录信息了吗？
+
+如果有人截获了登录请求，然后冒充远程主机，将伪造的公钥发给用户，那么用户很难辨别真伪。因为不像https协议，SSH协议的公钥是没有证书中心（CA）公证的，也就是说，都是自己签发的。可以设想具体场景，如果攻击者插在用户与远程主机之间（比如在公共的wifi区域），用伪造的公钥，获取用户的登录密码。再用这个密码登录远程主机，那么SSH的安全机制就荡然无存了。这种风险就是著名的"中间人攻击"(Man-in-the-middle attack)。
+
+以用户TopGun为例，如图四：
+
+
+
+那SSH协议是如何应对的呢？
+
+五、SSH解决中间人攻击
+1、口令登录（基于口令的认证）
+从上面的描述可以看出，问题就在于如何对Server的公钥进行认证？在https中可以通过CA来进行公证，可是SSH的publish key和private key都是自己生成的，没法公证。只能通过Client端自己对公钥进行确认。
+
+通常在第一次登录的时候，系统会出现下面提示信息：
+
+$ ssh user@host
+The authenticity of host 'host (12.18.429.21)' can't be established.
+RSA key fingerprint is 98:2e:d7:e0:de:9f:ac:67:28:c2:42:2d:37:16:58:4d.
+Are you sure you want to continue connecting (yes/no)?
+上面的信息说的是：无法确认主机host(12.18.429.21)的真实性，不过知道它的公钥指纹，询问你是否继续连接？
+
+所谓"公钥指纹"，是指公钥长度较长（这里采用RSA算法，长达1024位），很难比对，所以对其进行MD5计算，将它变成一个128位的指纹。上例中是98:2e:d7:e0:de:9f:ac:67:28:c2:42:2d:37:16:58:4d，再进行比较，就容易多了。
+
+之所以用fingerprint代替key，主要是key过于长（RSA算法生成的公钥有1024位），很难直接比较。所以，对公钥进行hash生成一个128位的指纹，这样就方便比较了。
+
+很自然的一个问题就是，用户怎么知道远程主机的公钥指纹应该是多少？
+
+回答是没有好办法，远程主机必须在自己的网站上贴出公钥指纹，以便用户自行核对，或者自己甄别host地址是否正确。
+
+假定经过风险衡量以后（一般用户直接就选择yes吧），用户决定接受这个远程主机的公钥。
+　　Are you sure you want to continue connecting (yes/no)? yes
+系统会出现一句提示，表示host主机已经得到认可。
+　　Warning: Permanently added 'host,12.18.429.21' (RSA) to the list of known hosts.
+然后，会要求输入密码。
+　　Password: (enter password)
+如果密码正确，就可以登录了。
+
+当远程主机的公钥被接受以后，它就会被保存在文件$HOME/.ssh/known_hosts之中。下次再连接这台主机，系统就会认出它的公钥已经保存在本地了，从而跳过警告部分，直接提示输入密码。
+每个SSH用户都有自己的known_hosts文件，此外系统也有一个这样的文件，通常是/etc/ssh/ssh_known_hosts，保存一些对所有用户都可信赖的远程主机的公钥。
+
+我本地的known_hosts文件，可以发现已经保存了五个我觉得放心的服务器(hosts)的公钥
+
+简单说，当host已被确认，并被追加到文件known_hosts中，下次连接只需要输入密码即可，之后的流程就按照图3进行。
+
+复制代码
+|1|sgbtTTUJ/9xTRBchGIGXXt51J6M=|Bb5EzE/lSWWElJN12apF7fSxtSY= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBAQmeHZvdibukSrHVjiGvRRp121o9u6wggOnckia4LTv6AS/r3F05BogWJuPCyjEXT+U3neNYGtcqbSsXv/fO+U=
+|1|F4L6YTHVeEcS/E9eqk5xLOHKNr4=|SEILG9DHeT9FA9H/cjyvMzWSgew= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBGZgdcSEtfhdP83mlq1WOUlByl5zT4Mxn2SrH/EydDTO32reFKwUgAVOnHC0qVXIpp1Cup//qi1BbItUguENAro=
+|1|pPkIGKq8X1aFVc3Yawr3L8waBes=|JOtrUbUxAAq20A/yKwHWKawirIk= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBGZgdcSEtfhdP83mlq1WOUlByl5zT4Mxn2SrH/EydDTO32reFKwUgAVOnHC0qVXIpp1Cup//qi1BbItUguENAro=
+|1|QCS+wt47tTYBGwGT/xCqca38sTo=|IqOJYH8AS6hvBwKO8V5dwmfGQik= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBORUpIyKsByC4cmSytCVpSLrLcWgu5x/2Oy0eDpxI9qzvQf13p9/e74un+AsyspKhV8CVW0ES65YPy1cgGGp79Y=
+|1|/cf8UrQvOCilbSE6NBIPApJ+QDU=|sC0XF3Ug/QyCl770t0EsulwcXN8= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHEfk6MWAQM5uutCW+wUiTVcEkE5NUG4Tp6AFputB7dKlga1yOEA1mHs90gDN8Gg1u44mUEEDp/xPU6qnZ2Lv6A=
+复制代码
+2、公钥登录（基于公钥的认证）
+使用密码登录，每次都必须输入密码，非常麻烦。好在SSH提供了另外一种可以免去输入密码过程的登录方式：公钥登录。
+
+所谓"公钥登录"，原理很简单，就是用户将自己的公钥储存在远程主机上。
+
+登录的时候，远程主机会向用户发送一段随机字符串，用户用自己的私钥加密后，再发回来。远程主机用事先储存的公钥进行解密，如果成功，就证明用户是可信的，直接允许登录shell，不再要求密码。
+
+以用户TopGun为例，流程如下：
+
+
+
+公钥认证流程：
+
+1. Client端用户TopGun将自己的公钥存放在Server上，追加在文件authorized_keys中。
+
+2. Server收到登录请求后，随机生成一个字符串str1，并发送给Client。
+
+3. Client用自己的私钥对字符串str1进行加密。
+
+4. 将加密后字符串发送给Server。
+
+5. Server用之前存储的公钥进行解密，比较解密后的str2和str1。
+
+6. 根据比较结果，返回客户端登陆结果。
+
+在步骤1中，Client将自己的公钥存放在Server上。需要用户手动将公钥copy到server上。这就是在配置ssh的时候进程进行的操作。下图是GitLab上SSH keys设置视图：
+
+
+
+ 
+
+这种方法要求用户必须提供自己的公钥。如果没有现成的，可以直接用ssh-keygen生成一个：
+
+$ ssh-keygen
+运行上面的命令以后，系统会出现一系列提示，可以一路回车。其中有一个问题是，要不要对私钥设置口令（passphrase），如果担心私钥的安全，这里可以设置一个。
+
+运行结束以后，在$HOME/.ssh/目录下，会新生成两个文件：id_rsa.pub和id_rsa。前者是你的公钥，后者是你的私钥。
+
+比如，我需要用用户user登录host服务器，只需再输入下面的命令，将公钥传送到远程主机host上面：
+
+$ ssh-copy-id user@host
+好了，从此你再登录，就不需要输入密码了。
+
+如果还是不行，就打开远程主机的/etc/ssh/sshd_config这个文件，检查下面几行前面"#"注释是否取掉。
+　　RSAAuthentication yes
+　　PubkeyAuthentication yes
+　　AuthorizedKeysFile .ssh/authorized_keys
+然后，重启远程主机的ssh服务。
+　　// ubuntu系统
+　　service ssh restart
+　　// debian系统
+　　/etc/init.d/ssh restart
+
+什么是authorized_keys文件？
+远程主机将用户的公钥，保存在登录后的用户主目录的$HOME/.ssh/authorized_keys文件中。公钥就是一段字符串，只要把它追加在authorized_keys文件的末尾就行了。
+
+这里不使用上面的ssh-copy-id命令，改用下面的命令，解释公钥的保存过程：
+
+$ ssh user@host 'mkdir -p .ssh && cat >> .ssh/authorized_keys' < ~/.ssh/id_rsa.pub
+这条命令由多个语句组成，依次分解开来看：（1）"$ ssh user@host"，表示登录远程主机；（2）单引号中的mkdir .ssh && cat >> .ssh/authorized_keys，表示登录后在远程shell上执行的命令：（3）"$ mkdir -p .ssh"的作用是，如果用户主目录中的.ssh目录不存在，就创建一个；（4）'cat >> .ssh/authorized_keys' < ~/.ssh/id_rsa.pub的作用是，将本地的公钥文件~/.ssh/id_rsa.pub，重定向追加到远程文件authorized_keys的末尾。
+写入authorized_keys文件后，公钥登录的设置就完成了。
+
+我本地的ahtorized_keys文件。添加后内容如下：
+
+复制代码
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDQsqm2aqI3MCUcDlcqnU9JfE30TYfUjayKGf/+WvLOpFVUqhwnrAFVT7VaCW5G5Lh3IlWzGCflhl0Yjasb3BTELV+W+zHpefgEwJaNB725yfzdPvk/aGrHv7UusggMqqR11JDW2zlISo/xUysEzJ4pTnjz6AcdKUCE8biB3s37yTSa8k78g2j06tzLglr+np179jCiq9RJfKCs/omeCHbU+pyhcCk6DoL/SRHzNczfHIcJBvhWvY7CPKHb2vqD9k5d9cS2renGvB2/fCkyyNdnVZgKc3r5ufJUD+yWJ6yMHNT/hMn0uybEHuVz8s/zXjdH3xgx40UrfLs8eNKTKpAN app@bjxg-ap-27-7
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCk7sNBV8ag8KKApN4mapTQTkDEbcA3VNFIhSuO+YLTbkO29KU6FSQhlT2It2hmmmdaVJXEMx6JmQS7+62DNHIpHnzaKimEU+tKosAdOwHoZPcskMw6QlvjkhicKg7+kNsFdeSuAtE3V4ShbFPUfRNAs/9a/b56/FqqGIk6oPVu19CSvMyLnnqTht9rMQdIw4uOynogEKivgdwsAFh4qayJSz8VwklN9dx+8dqw8e9e/CxXEDWuZ2T/DtEa+gIRy0bvJaDcgzcpvxMkf+71HTpYlvkziF1YPmPX60gcyCkRkLnmM1fSkHXhAmBxZuSLc3l1VKXXWkH9rsgvxLzKuML/ app@bjxg-ap-28-7
+复制代码
+六、SSH总结
+生成密钥操作
+
+
+1. 打开ssh目录，一般是隐藏的 cd ~/.ssh
+
+2. 生成密钥文件,这样就会生成默认名字为id_rsa和id_rsa.pub
+
+ssh-keygen -t rsa -C "YOUR_EMAIL@YOUREMAIL.COM"
+(说明：YOUR_EMAIL@YOUREMAIL.COM换成你自己的邮箱)
+3. 打开公钥文件（id_rsa.pub），并把内容复制至代码托管平台上 或者 需要访问的服务器(host)上的authorized_keys里。
+
+vim ~/.ssh/id_rsa.pub
+a.代码托管平台
+进入 GitLab-->账户设置-->Profile Settings --> SSH Keys，点击Add keys 按钮，在 Title 文本框中输入任意字符，在 Key 文本框粘贴刚才复制的公钥字符串，按保存按钮完成操作。
+
+b.目标服务器
+cd ~/.ssh/
+vim authorized_keys
+4. 测试
+
+ssh -T git@gitlab.com
+#或者
+ssh -T user@host
+成功应该提示:
+
+delon@macpro:~/.ssh$ ssh -T git@git.hostname.com
+Welcome to GitLab, CIRobot!
+
+这样就可以只用ssh协议的URL了,一般默认是https协议的，如图点击SSH即可切换：
+
+
+
+这样push代码时就不用再输密码了。
+
+名词解释：
+ssh-keygen是用于生产密钥的工具。
+id_rsa：保存私钥
+id_rsa.pub：保存公钥
+authorized_keys：保存已授权的客户端公钥
+known_hosts：保存已认证的远程主机公钥
+
+关系图：
+
+
+
+需要注意的是：一台主机可能既是Client，也是Server。所以会同时拥有authorized_keys和known_hosts。
+
+七、补充一点
+ 
+这部分Git熟悉的基本可以略过：有些童鞋可能在设置这个多账号前已经配置了一个Github/GitLab的ssh，然后把代码clone下来，配置多账号后，原来的代码就提交不上了。
+
+此时你进入 原来clone的代码文件夹下，执行 git remote -v，即可看到远处资源库路径
+
+如：git@github.com:test/xxxxxx.git
+
+执行git remote remove origin删除该远程路径
+
+执行git remote add origin git@test.github.com:test/xxxxxx.git加上正确的远程仓库。
+
+GitLab的话
+
+执行git remote add origin http://git.host.com/ios/项目名.git
