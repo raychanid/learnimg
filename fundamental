@@ -2,13 +2,18 @@
 版本库又名仓库,英文名repository,可以简单理解成一个目录,这个目录里面的所有文件都可以被Git管理起来,每个文件的修改、删除,Git都能跟踪,以便任何时刻都可以追踪历史,或者在将来某个时刻可以"还原"。
 第一步:首先,选择一个合适的地方,创建一个空目录(本示例在D盘)：
 
-$ cd d:
-$ mkdir XXX
-$ cd XXX
-$ pwd
-/d/XXX
+…or create a new repository on the command line
+ echo "内容" >> README.md
+git init    
+git add README.md
+git commit -m "first commit"   #第一个命令是告诉Git要追踪什么文件，第二个命令是进行提交，并对此次提交做个简答说明。当然，今后他再对README做什么修改，都可以这样做。Git会自动为此次提交生成一个16进制的版本号。
+如果你要将所有文件都添加上去的话,使用git add .  "."表示添加当前目录中的所有文件"
+git remote add origin https://github.com/raychanid/项目.git
+git push -u origin master
 
-CD是进入到一个目录,MKDIR表示新建。PWD命令用于显示当前目录。我的仓库位于/d/XXX
+…or push an existing repository from the command line
+ git remote add origin https://github.com/raychanid/111.git
+git push -u origin master
 
 第二步:通过git init命令把这个目录变成Git可以管理的仓库
 
@@ -25,9 +30,6 @@ Initialized empty Git repository in d:/XXX/.git/
 $ git add README
 $ git commit -m "add README"
 
-                    第一个命令是告诉Git要追踪什么文件，第二个命令是进行提交，并对此次提交做个简答说明。
-当然，今后他再对README做什么修改，都可以这样做。Git会自动为此次提交生成一个16进制的版本号。
-如果你要将所有文件都添加上去的话,使用git add .  "."表示添加当前目录中的所有文件
 
 ？git 报错 pathspec 'XXX' did not match any file(s) known to git
 
